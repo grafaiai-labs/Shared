@@ -1,7 +1,6 @@
 # Informatica 2026年7月リリースに関する包括的影響調査報告書（第三版）
 
-ご提示いただいた最新の画面（`Data Integration Connectors` ＞ [New and updated connector packages](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/New_and_updated_connector_packages.html)）の検証を完了しました。
-7月リリースの全体像と、貴チームの開発（Salesforce ➔ Snowflake へのデータ連携ジョブ）における影響度サマリーを以下の通り更新・改修します。
+7月リリースの全体像と、Salesforce ➔ Snowflake へのデータ連携ジョブにおける影響度サマリーを以下にまとめます。
 
 ---
 
