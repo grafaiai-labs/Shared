@@ -1,55 +1,61 @@
-# Informatica 2026年7月リリースに関する最終影響調査報告書
+# Informatica 2026年7月リリースに関する包括的影響調査報告書（第三版）
 
-ご提示いただいたすべての詳細画面（`Enhanced connectors`、`Changed behavior`、および今回の `Important notices`）の検証を完了しました。
-7月リリースのサマリーとデータ基盤開発における最影響度サマリーを以下の通り報告いたします。
+ご提示いただいた最新の画面（`Data Integration Connectors` ＞ [New and updated connector packages](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/New_and_updated_connector_packages.html)）の検証を完了しました。
+7月リリースの全体像と、貴チームの開発（Salesforce ➔ Snowflake へのデータ連携ジョブ）における影響度サマリーを以下の通り更新・改修します。
 
 ---
 
-## 1. 総合結論：データ連携ジョブ自体は安全、ただし「自動化スクリプト」に要警戒
+## 1. 総合結論：データ連携ジョブ自体は安全、ただし「自動化スクリプト」と「Salesforceコネクタのアップデート」に要警戒
 
 本リリースにより、SalesforceからSnowflakeへデータを転送する「マッピング」や「タスク」のロジックそのものが破損するリスクはありません。
 
-ただし、今回の [Important notices](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Important_notices_5.html) で共有いただいた**「セッションベース認証の廃止方針（JWTへの移行）」**は、APIを用いたジョブの運用自動化や外部連携を行っている場合に**中〜長期的に大きな影響を及ぼすリスク**があります。
+ただし、`Important notices` にある**「セッションベース認証の廃止方針（JWTへの移行）」**に加え、今回新たに**「Salesforce Connector」自体がアップデート対象に含まれていること**が判明しました。直接的なエラーリスクは低いですが、リリース後の動作検証（リグレッションテスト）の優先度を上げる必要があります。
 
 ---
 
-## 2. 各セクションの検証結果サマリー
+## 2. 2026年7月リリースの全体サマリーと影響度検証
 
-### ① 重要なお知らせ（[Important notices](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Important_notices_5.html)）
-* **内容:** ユーザー認証における「セッションベース認証」のサポート終了予告と、JSON Web Token（JWT）への移行。
-* **技術的詳細:** * 2025年10月時点でセッションベース認証はすでに非推奨（Deprecated）となっています。
-  * **2026年7月リリースの「しばらく後」に、JWT認証がデフォルトの認証方式になります。**
-  * これに伴い、REST APIを呼び出すスクリプトは、トークンの有効期限が切れる前後に「自動再認証」を処理できるようにコードを修正する必要があります。
-* **影響度:** **【中〜高（運用方法による）】**
-  * Informaticaの画面上での開発には影響しません。
-  * ジョブの起動や監視を、外部システム（Hinemos、JP1、Airflow、自作スクリプトなど）から**Informatica REST API**を叩いて実行している場合、認証エラーでジョブが起動できなくなる未来のリスク（または2026年7月以降に管理者がJWTを有効化した際のリスク）があります。
+現在判明している仕様変更・機能強化の全体像と、貴チームへの影響判定です。
 
-### ② 仕様変更（[Changed behavior](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Changed_behavior_5.html)）
-* **内容:** REST APIによるプロジェクト・フォルダの削除（DELETE）要求時における、アセットタイプの厳密なチェック。
-* **影響度:** **【低（通常運用なら影響なし）】**
-  * API経由でプロジェクトやフォルダを削除する特殊なCI/CD自動化等を行っていない限り、影響はありません。
+### ① コネクタパッケージの更新（[New and updated connector packages](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/New_and_updated_connector_packages.html)） 【NEW】
+* **変更内容:** 2026年7月リリースにおいて、多数のコネクタパッケージが新機能の追加、バグ修正、または内部修正のためにアップデートされます。
+* **対象となる主要コネクタ:** * **Salesforce Connector**、Salesforce Analytics Connector、Salesforce Data 360 Connector
+  * REST V2 Connector
+  * （※Snowflake Connector は今回のリストに含まれていません）
+* **貴チームへの影響度:** **【低〜中（リリース後の検証を推奨）】**
+  * 接続自体ができなくなる仕様変更は報告されていませんが、貴チームが利用している **Salesforce Connector に内部修正やバグフィックスが入ります。** リリース後、既存のジョブが正常に動作するかテスト環境での実行確認を行うことを強く推奨します。
 
-### ③ コネクタ強化（[Enhanced connectors](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Enhanced_connectors.html)）
-* **内容:** Databricks、Microsoft Azure Synapse/Fabric の機能強化。
-* **影響度:** **【なし】**
-  * Salesforce Connector および Snowflake Connector に関する変更は含まれていません。
+### ② 管理者機能の仕様変更（[Administrator > Changed behavior](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Changed_behavior.html)）
+* **変更内容:** REST APIを用いたユーザー作成（v3 users resource）時のMFA必須属性追加、Bitbucket構成フィールドのラベル名変更、REST APIによるプロジェクト・フォルダ削除時のバリデーション厳格化。
+* **貴チームへの影響度:** **【低（通常運用なら影響なし）】**
+  * ユーザー作成やアセット削除などをAPIで自動化していない限り、現在のデータ連携ジョブへの影響はありません。
+
+### ③ 重要なお知らせ（[Important notices](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Important_notices_5.html)）
+* **変更内容:** ユーザー認証における「セッションベース認証」のサポート終了予告と、JSON Web Token（JWT）への完全移行。
+* **貴チームへの影響度:** **【中〜高（運用方法による）】**
+  * ジョブの起動や監視を、外部ジョブ管理ツールや自作スクリプトから **Informatica REST API** を叩いて実行している場合、認証エラーでジョブが動かなくなる長期的なリスクがあります。
+
+### ④ コネクタ強化（[Enhanced connectors](https://onlinehelp.informatica.com/iics/prod/WhatsNew/en/index.htm#page/aa-iics-whats-new/Enhanced_connectors.html)）
+* **変更内容:** Databricks（カスタムクエリ対応）、Microsoft Azure Synapse/Fabric（推奨JDBCドライバーの構成）の機能強化。
+* **貴チームへの影響度:** **【なし】**
 
 ---
 
-## 3. 今すぐ確認すべき「影響チェックリスト」
+## 3. 影響確認チェックリスト
 
 リリース後のトラブルを未然に防ぐため、以下の運用・実装がないか最終確認を行ってください。
 
-* [ ] **Q1. 外部システムからInformaticaのREST APIを呼び出していますか？**
-  * ➔ **YESの場合:** 認証ヘッダーに `icSessionId` などを設定する従来のセッション方式を使っている場合、JWT方式（有効期限付きトークンのハンドリング）へのスクリプト改修を計画してください。
-  * *注意:* もし「REST V2 Connector」を使ってIDMC自体のAPIを叩いている場合は、JWTを有効化すると競合するため、ドキュメントに記載されている通り「API Center」への移行検討が必要です。
-* [ ] **Q2. ジョブのデプロイや削除をAPIで自動化していますか？**
-  * ➔ **YESの場合:** フォルダやプロジェクトを削除するAPIリクエストが、正しいアセットIDをターゲットにしているかコードを見直してください（不整合があるとエラーになります）。
+* [ ] **Q1. Salesforce Connector のアップデートに伴うテスト計画はありますか？**
+  * ➔ **推奨アクション:** 7月リリース適用後、本番反映前に主要な Salesforce ➔ Snowflake 連携ジョブが正常に動作するか、検証環境でテスト実行を行ってください。
+* [ ] **Q2. 外部システムからInformaticaのREST APIを呼び出していますか？**
+  * ➔ **YESの場合:** 認証ヘッダーに `icSessionId` などを設定する従来のセッション方式を使っている場合、JWT方式へのスクリプト改修を計画してください。
+* [ ] **Q3. ユーザー作成やアセット削除、ソース管理（Bitbucket）をAPIや外部連携で自動制御していますか？**
+  * ➔ **YESの場合:** リクエストパラメータや削除対象のIDタイプが厳密にあっているか、スクリプトのロジックを確認してください。
 
 ---
 
 ## 4. 総括
 
-今回の2026年7月リリースにおいて、**「SalesforceからSnowflakeへのデータパイプラインそのものが動かなくなる」という直近の致命的な変更はありません。現在開発中のロジックやマッピング定義はそのまま進めて問題ありません。
+今回の2026年7月リリースにおいて、ジョブが完全に動作しなくなるような致命的な仕様変更はありません。現在開発中のマッピングロジックはそのまま進めて問題ありません。
 
-ただし、**「APIを使った認証方式の世界的な変更（JWT化）」**というインフラ・運用面の大きな波が来ているため、インフラ担当者や運用設計者とこの情報を共有し、認証スクリプトのアップデート時期を会話しておくことを強く推奨いたします。
+しかし、**Salesforce Connector自体のパッケージ更新**が行われるため、念のための動作確認テストが必要です。また、中長期的な**「APIのJWT認証化」**に向け、運用・インフラ担当者との情報共有と対策ロードマップの策定を進めておくことを推奨いたします。
