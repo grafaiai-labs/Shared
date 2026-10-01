@@ -1,77 +1,64 @@
-Windows開発用EC2のSecurity Group実装を改修してください。
+Windows 開発サーバー (Pattern 01: Windows 開発用 EC2) の Security Group 定義を変更してください。
 
-背景:
-現在作成される Security Group (yudaitanaka1-windev-ec2-01-sg) には
-RDP許可ルールのみ作成されています。
+変更要件:
 
-実環境でRDP接続できなかったため調査したところ、
-CP-SandD01-D-SMARTGateway-SG を追加すると接続できました。
+■ インバウンドルール
 
-調査結果から、SMART Gateway の送信元IPは以下の3つであることが判明しました。
+既存のルールは維持したまま、以下のルールを追加してください。
 
-163.49.23.253/32
-163.49.24.253/32
-220.216.68.253/32
+- Type: All Traffic
+- Protocol: All
+- Port Range: All
+- Source: 18.99.64.220/30
+- IPv4
 
-現在のREADMEでは
-rdp_allowed_cidrs による RDP許可のみを前提にしていますが、
-実際のSMART Gateway環境に合わせて IaC を修正したいです。
+AWSコンソール上では以下のルールに相当します。
 
-要件:
+sgr-0f0e8fe9cb5991cd7
+IPv4
+すべてのトラフィック
+すべて
+すべて
+18.99.64.220/30
 
-1.
-README、設計書、サンプルtfvarsを更新する。
+■ アウトバウンドルール
 
-2.
-SMART Gateway CIDR を単一CIDRではなく複数CIDR配列として扱う。
+現在定義されているアウトバウンドルールをすべて削除してください。
 
-3.
-デフォルト例として以下を設定する。
+そのうえで、以下のルールを 1 つだけ定義してください。
 
-163.49.23.253/32
-163.49.24.253/32
-220.216.68.253/32
+- Type: All Traffic
+- Protocol: All
+- Port Range: All
+- Destination: 0.0.0.0/0
+- IPv4
 
-4.
-Security Group作成時に以下を作成する。
+AWSコンソール上では以下のルールに相当します。
 
-RDP TCP 3389
-- 163.49.23.253/32
-- 163.49.24.253/32
-- 220.216.68.253/32
+sgr-08cb20c79ad5792a2
+IPv4
+すべてのトラフィック
+すべて
+すべて
+0.0.0.0/0
 
-5.
-以下も追加する。
+実施内容:
 
-SSH TCP 22
-- 163.49.23.253/32
-- 163.49.24.253/32
-- 220.216.68.253/32
+1. Windows 開発サーバー用 Security Group の Terraform 定義を修正
+2. 関連する terraform test / plan テストを修正
+3. README や設計書に Security Group 仕様が記載されている場合は整合性が取れるよう更新
+4. 不要になった 443/80 のアウトバウンドルール定義は削除
+5. 変更対象ファイル一覧を提示
+6. git diff 形式で変更内容を要約
+7. Terraform validate と terraform test が通ることを確認
 
-ICMP ALL
-- 163.49.23.253/32
-- 163.49.24.253/32
-- 220.216.68.253/32
+変更後の期待状態:
 
-6.
-既存のfor_each実装があれば活用し、
-CIDR追加時にTerraformコード変更が不要な構造にする。
+Inbound
+- TCP 3389 ← RDP許可CIDR (既存)
+- All Traffic ← 18.99.64.220/30 (追加)
 
-7.
-terraform test を更新する。
+Outbound
+- All Traffic → 0.0.0.0/0 のみ
 
-8.
-READMEの成功条件、Security Group設計、
-terraform.tfvars.example を更新する。
-
-9.
-CHANGELOG.mdへ変更履歴を追加する。
-
-10.
-変更内容を以下形式で報告する。
-
-- 修正ファイル一覧
-- 変更理由
-- Terraform差分概要
-- テスト結果
-- 想定されるterraform plan差分
+実装前に関連ファイルを調査し、影響箇所を漏れなく修正してください。
