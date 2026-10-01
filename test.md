@@ -1,75 +1,77 @@
-Windows開発用EC2のRDP接続不具合を調査して修正してください。
+Windows開発用EC2のSecurity Group実装を改修してください。
 
-# 背景
+背景:
+現在作成される Security Group (yudaitanaka1-windev-ec2-01-sg) には
+RDP許可ルールのみ作成されています。
 
-現在 Terraform で作成される Security Group:
+実環境でRDP接続できなかったため調査したところ、
+CP-SandD01-D-SMARTGateway-SG を追加すると接続できました。
 
-yudaitanaka1-windev-ec2-01-sg
+調査結果から、SMART Gateway の送信元IPは以下の3つであることが判明しました。
 
-には以下のルールがあります。
+163.49.23.253/32
+163.49.24.253/32
+220.216.68.253/32
+
+現在のREADMEでは
+rdp_allowed_cidrs による RDP許可のみを前提にしていますが、
+実際のSMART Gateway環境に合わせて IaC を修正したいです。
+
+要件:
+
+1.
+README、設計書、サンプルtfvarsを更新する。
+
+2.
+SMART Gateway CIDR を単一CIDRではなく複数CIDR配列として扱う。
+
+3.
+デフォルト例として以下を設定する。
+
+163.49.23.253/32
+163.49.24.253/32
+220.216.68.253/32
+
+4.
+Security Group作成時に以下を作成する。
 
 RDP TCP 3389
-- 220.216.68.253/32
-- 163.49.24.253/32
 - 163.49.23.253/32
+- 163.49.24.253/32
+- 220.216.68.253/32
 
-しかし SMART Gateway 経由で RDP 接続できません。
-
-一方で EC2 に以下の Security Group を追加すると接続できます。
-
-CP-SandD01-D-SMARTGateway-SG
-
-主なルール:
+5.
+以下も追加する。
 
 SSH TCP 22
-- 220.216.68.253/32
-- 163.49.24.253/32
 - 163.49.23.253/32
-
-RDP TCP 3389
-- 220.216.68.253/32
 - 163.49.24.253/32
-- 163.49.23.253/32
-
-ICMP
 - 220.216.68.253/32
-- 163.49.24.253/32
+
+ICMP ALL
 - 163.49.23.253/32
+- 163.49.24.253/32
+- 220.216.68.253/32
 
-All Traffic
-- 18.99.64.220/30
+6.
+既存のfor_each実装があれば活用し、
+CIDR追加時にTerraformコード変更が不要な構造にする。
 
-# やってほしいこと
+7.
+terraform test を更新する。
 
-1. Pattern01 の Security Group 実装を調査する
+8.
+READMEの成功条件、Security Group設計、
+terraform.tfvars.example を更新する。
 
-2. SMART Gateway 接続に必要な通信要件を推測ではなくコードと設計から分析する
+9.
+CHANGELOG.mdへ変更履歴を追加する。
 
-3. CP-SandD01-D-SMARTGateway-SGとの差分を整理する
+10.
+変更内容を以下形式で報告する。
 
-4. 接続失敗の原因候補を列挙する
-
-5. 最小権限で修正案を作成する
-
-6. Terraformコードを修正する
-
-7. terraform test があれば更新する
-
-8. README.md の Security Group 設計も更新する
-
-# 重要
-
-- SSHを無条件に追加しない
-- ICMPを無条件に追加しない
-- All Trafficを無条件に追加しない
-- なぜ必要か説明できる場合のみ追加する
-- 追加が不要なら不要と判断する
-- 修正理由を ADR 形式でまとめる
-
-# 成果物
-
-- 原因分析
-- 修正内容
-- Terraform差分
-- README差分
+- 修正ファイル一覧
+- 変更理由
+- Terraform差分概要
 - テスト結果
+- 想定されるterraform plan差分
