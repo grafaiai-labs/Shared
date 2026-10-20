@@ -1,5 +1,5 @@
 # 1. APIキーとヘッダーの設定
-$apiKey = "cc63eb0c0c4f4bb5a8094078b9b28092"
+$apiKey = "*****"
 $headers = @{
     "Ocp-Apim-Subscription-Key" = $apiKey
 }
